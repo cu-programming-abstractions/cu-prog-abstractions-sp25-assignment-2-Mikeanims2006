@@ -1,52 +1,96 @@
 #include "RosettaStone.h"
 #include "GUI/SimpleTest.h"
+#include "priorityqueue.h"
 using namespace std;
+using namespace stanfordcpplib;
 
 Map<string, double> kGramsIn(const string& str, int kGramLength) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) str;
-    (void) kGramLength;
-    return {};
+    int strlen = str.size();
+    Map<string, double> rValue;
+    if (strlen < kGramLength){
+        return {};
+    }
+    if(kGramLength <= 0){
+        error("Wrong input");
+    }
+    for(int i = 0; i <= strlen - kGramLength; i++){
+        string kGram = str.substr(i, kGramLength);
+        rValue[kGram] += 1.0;
+    }
+    return rValue;
 }
 
 Map<string, double> normalize(const Map<string, double>& input) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) input;
-    return {};
+    if (input.isEmpty()) {
+        error("Cannot normalize an empty map.");
+    }
+
+    double sqSum = 0;
+    for (const string& key : input) {
+        sqSum += pow(input[key], 2);
+    }
+
+    if (sqSum == 0) {
+        error("Normalization division by zero.");
+    }
+
+    Map<string, double> rValue;
+    for (const string& key : input) {
+        rValue[key] = input[key] / sqrt(sqSum);
+    }
+    return rValue;
 }
 
 Map<string, double> topKGramsIn(const Map<string, double>& source, int numToKeep) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) source;
-    (void) numToKeep;
-    return {};
+    if (numToKeep <= 0) {
+        return {};
+    }
+
+    PriorityQueue<string> pq;
+    for (const string& key : source) {
+        pq.enqueue(key, source[key]);
+    }
+
+    while (pq.size() > numToKeep) {
+        pq.dequeue();
+    }
+
+    Map<string, double> rValue;
+    while (!pq.isEmpty()) {
+        string key = pq.dequeue();
+        rValue[key] = source[key];
+    }
+
+    return rValue;
 }
 
 double cosineSimilarityOf(const Map<string, double>& lhs, const Map<string, double>& rhs) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) lhs;
-    (void) rhs;
-    return {};
+    double similarity = 0.0;
+
+    for (const string& key : lhs) {
+        if (rhs.containsKey(key)) {
+            similarity += lhs[key] * rhs[key];
+        }
+    }
+
+    return similarity;
 }
 
 string guessLanguageOf(const Map<string, double>& textProfile,
                        const Set<Corpus>& corpora) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) textProfile;
-    (void) corpora;
-    return "";
+    if (corpora.isEmpty()){
+        error("Empty");
+    }
+    PriorityQueue<string> pq;
+    for (const Corpus& elem : corpora) {
+        double enqV = cosineSimilarityOf(elem.profile, textProfile);
+        pq.enqueue(elem.name, enqV);
+    }
+    while(pq.size() != 1){
+        pq.dequeue();
+    }
+    return pq.peek();
 }
-
 
 
 
